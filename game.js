@@ -67,6 +67,12 @@ class Arrow{
 				clearInterval(this.moveArrow);
 				
 			}
+			var doc=document.elementFromPoint(this.arrow.offsetLeft, this.arrow.offsetTop+3);
+			if(doc.classList.contains('bomb'))
+			{
+				doc.remove();
+				this.remove();
+			}
 		}, 10);
 		
 	}
