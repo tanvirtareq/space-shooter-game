@@ -1,13 +1,19 @@
+// top 695
+
 var upPressed = false;
 var downPressed = false;
 var leftPressed = false;
 var rightPressed = false;
 var lastPressed = false;
+var waiting=true;
 
 function keyup(event) {
+
+	
 	
 	if(!isPaused)
 	{
+		console.log(event.keyCode);
 		var player = document.getElementById('player');
 		if (event.keyCode == 37) {
 			leftPressed = false;
@@ -25,13 +31,59 @@ function keyup(event) {
 			downPressed = false;
 			lastPressed = 'down';
 		}
-		
-		player.className = 'character stand ' + lastPressed;
+		if(event.keyCode==32 && waiting==false)
+		{
+			fire();
+		}
+		if(event.keyCode!=32 || waiting==true)
+			player.className = 'character stand ' + lastPressed;
 		
 	
 	}	
 	
 	
+
+}
+
+var arrows=[];
+
+class Arrow{
+	constructor(player)
+	{
+		this.arrow=document.createElement('div');
+		this.arrow.classList.add('arrow');
+		this.arrow.classList.add('up');
+		this.arrow.style.top=player.offsetTop+'px';
+		this.arrow.style.left=player.offsetLeft+'px';
+		body.appendChild(this.arrow);
+		arrows.push(this);
+		console.log(arrows);
+		this.moveArrow=setInterval(()=>{
+			this.arrow.style.top=(this.arrow.offsetTop-1)+'px';
+			if(this.arrow.offsetTop==0)
+			{
+				arrows=arrows.filter((b)=> { b!==this});
+				this.arrow.remove();
+				clearInterval(this.moveArrow);
+				
+			}
+		}, 10);
+		
+	}
+	remove()
+	{
+		this.arrow.remove();
+		clearInterval(this.moveArrow);
+	}
+}
+
+async function fire()
+{
+	var player=document.getElementById('player');
+	player.className='character stand up fire';
+	new Arrow(player);
+	// arrows.push(arrow);
+	// console.log(arrow.arrow);
 }
 
 
@@ -224,9 +276,30 @@ function removeAllBomb()
 	}
 }
 
+function removeAllIntervals()
+{
+	for(var i=0;i<spaceships.length;i++)
+	{
+		clearInterval(spaceships[i].moveSpaceship);
+		clearInterval(spaceships[i].generateBombs);
+	}
+	for(var i=0;i<bombs.length;i++)
+	{
+		clearInterval(bombs[i].moveBomb);
+	}
+	for(var i=0;i<arrows.length;i++)
+	{
+		clearInterval(arrows[i].moveBomb);
+	}
+	clearInterval(levelCheck);
+}
+
 async function gameOver(player)
 {
-	console.log(isPaused);
+
+	removeAllIntervals();
+
+	// console.log(isPaused);
 	player.classList.add('dead');
 	console.log(player.classList);
 	await delay(1000);
@@ -315,7 +388,8 @@ async function playerHit(player)
 	// console.log(children);
 	var lastChild=children[children.length-1];
 	lastChild.remove();
-	children[children.length-1].remove();
+	if(children.length>0)
+		children[children.length-1].remove();
 	children=health.childNodes;
 	// console.log(children.length);
 	upPressed = false;	
@@ -323,6 +397,7 @@ async function playerHit(player)
 	leftPressed = false;
 	rightPressed = false;
 	lastPressed = false;
+	player.classList=['character'];
 	isPaused=true;
 	if(children.length===1)
 	{
@@ -363,7 +438,7 @@ async function exploidBomb(bomb)
 	bomb.remove();
 	if(x<=60 && y<=60)
 	{
-		playerHit(player);
+		// playerHit(player);
 	}
 	else
 	{
@@ -394,6 +469,8 @@ async function exploidBomb(bomb)
 
 // }
 
+// var intervals=[];
+
 class Bomb{
 	constructor(spaceship)
 	{
@@ -401,29 +478,58 @@ class Bomb{
 		this.bomb=creatBomb(spaceship);
 		body.appendChild(this.bomb);
 		this.expoidPosition=getRndInteger(72, 97);
+		this.dir=getRndInteger(-1, 1);
+		this.x=0;
+		this.moveBomb=setInterval(()=>{
+			// this.x=(this.x+1)%3;
+			this.bomb.style.top=addforTop(this.bomb.style.top, 2);
+			// if(this.x==0)
+			this.bomb.style.left=addforLeft(this.bomb.style.left, this.dir);
+			var xx=this.bomb.style.left.substring(0, this.bomb.style.left.length-1);
+			if(xx<=2 || xx>=92)
+			{
+				exploidBomb(this.bomb);
+				Bombs=Bombs.filter((b)=> { b!==this});
+				clearInterval(this.moveBomb);
+			}
+			else if(Math.abs(parseInt(this.expoidPosition)-parseInt(this.bomb.style.top.substring(0, this.bomb.style.top.length-2)))<=2)
+			{
+				exploidBomb(this.bomb);
+				Bombs=Bombs.filter((b)=> { b!==this});
+				clearInterval(this.moveBomb);
+			}
+		
+		}, 100-5*level);
+		// intervals.push(this.moveBomb);
+	}
+
+	remove()
+	{
+		this.bomb.remove();
+		clearInterval(this.moveBomb);
 	}
 }
 
 var Bombs=[];
 
-var generateBombs=setInterval(()=>{
-	// console.log('ekhane');
-	if(!isPaused)
-	{
-		var spaceships=document.getElementsByClassName('alien');
-		for(var i=0;i<spaceships.length;i++)
-		{
-			var spaceship=spaceships[i];
-			var bomb=new Bomb(spaceship);
-			Bombs.push(bomb);
-			// var bomb=creatBomb(spaceship);
-			// body.appendChild(bomb);
+// var generateBombs=setInterval(()=>{
+// 	// console.log('ekhane');
+// 	if(!isPaused)
+// 	{
+// 		var spaceships=document.getElementsByClassName('alien');
+// 		for(var i=0;i<spaceships.length;i++)
+// 		{
+// 			var spaceship=spaceships[i];
+// 			var bomb=new Bomb(spaceship);
+// 			Bombs.push(bomb);
+// 			// var bomb=creatBomb(spaceship);
+// 			// body.appendChild(bomb);
 
 
-		}
-	}
+// 		}
+// 	}
 	
-}, 5000);
+// }, 5000);
 
 // async function moveAndExploidBomb(bomb, pos)
 // {
@@ -440,28 +546,76 @@ var generateBombs=setInterval(()=>{
 
 // }
 
-var moveBombs=setInterval(()=>{
-	// var bombs=document.getElementsByClassName('bomb');
-	if(!isPaused)
-	{
-		for(var i =0;i<Bombs.length;i++)
-		{
-			var bomb=Bombs[i];
-			// console.log(bomb.bomb.style.top);
-			bomb.bomb.style.top=addforTop(bomb.bomb.style.top, 2);
-			if(Math.abs(parseInt(bomb.expoidPosition)-parseInt(bomb.bomb.style.top.substring(0, bomb.bomb.style.top.length-2)))<=2)
-			{
-				exploidBomb(bomb.bomb);
-				// bomb.bomb.remove();
-				Bombs=Bombs.filter((b)=> { b!==bomb});
-			}
-			// console.log(bomb.getBoundingClientRect());
-		}
-	}
+// var moveBombs=setInterval(()=>{
+// 	// var bombs=document.getElementsByClassName('bomb');
+// 	if(!isPaused)
+// 	{
+// 		for(var i =0;i<Bombs.length;i++)
+// 		{
+// 			var bomb=Bombs[i];
+// 			// console.log(bomb.bomb.style.top);
+// 			bomb.bomb.style.top=addforTop(bomb.bomb.style.top, 2);
+// 			if(Math.abs(parseInt(bomb.expoidPosition)-parseInt(bomb.bomb.style.top.substring(0, bomb.bomb.style.top.length-2)))<=2)
+// 			{
+// 				exploidBomb(bomb.bomb);
+// 				// bomb.bomb.remove();
+// 				Bombs=Bombs.filter((b)=> { b!==bomb});
+// 			}
+// 			// console.log(bomb.getBoundingClientRect());
+// 		}
+// 	}
 	
-}, 100);
+// }, 100);
 
 var body=document.getElementsByTagName("BODY")[0];
+
+// function moveSpaceships(spaceship)
+// {
+
+// }
+
+var bombs=[];
+
+class Spaceship{
+	constructor()
+	{
+		this.spaceship=document.createElement('div');
+		body.appendChild(this.spaceship);
+		this.spaceship.classList.add('alien');
+		getSpaceshipInRandomPosition(this.spaceship);
+		this.spaceshipSpeed=getRndInteger(100, 200);
+		this.dir=getRndInteger(0, 1);
+		if(this.dir==0) this.dir=-1;
+		this.spaceshipSpeed=Math.max(1, this.spaceshipSpeed-5*level);
+
+		this.generateBombSpeed=getRndInteger(3000, 5000);
+		this.generateBombSpeed=Math.max(1, this.generateBombSpeed-200*level);
+
+		this.moveSpaceship=setInterval(()=>{
+			var x=this.spaceship.style.left.substring(0, this.spaceship.style.left.length-1);
+			x=parseInt(x);
+			if(x+this.dir<=2 || x+this.dir>=92)
+			{
+				this.dir=-this.dir;
+			}
+			x=x+this.dir;
+			x=x+'%';
+			this.spaceship.style.left=x;
+			// spaceship.style.left=getRndInteger(2, 92)+'%';
+		}, this.spaceshipSpeed);
+
+		this.generateBombs=setInterval(()=>{
+			bombs.push(new Bomb(this.spaceship));
+		}, this.generateBombSpeed);
+	}
+
+	remove()
+	{
+		this.spaceship.remove();
+		clearInterval(this.moveSpaceship);
+		clearInterval(this.generateBombs);
+	}
+}
 
 function createSpaceShip()
 {
@@ -480,13 +634,66 @@ var level=0;
 
 const spaceshipIncresePerLevel=3;
 
+var spaceships=[]
+
 function createSpaceShips()
 {
-	for(var i=1;i<=spaceshipIncresePerLevel;i++)
+	for(var i=1;i<=level*spaceshipIncresePerLevel;i++)
 	{
-		createSpaceShip();
+		spaceships.push(new Spaceship());
 	}
 }
+
+
+var scoreInlastLevel;
+
+function clearBoard()
+{
+	console.log(arrows);
+	for(var i=0;i<arrows.length;i++)
+	{
+		// arrows[i].remove()
+		arrows[i].remove();
+	}
+	for(var i=0;i<spaceships.length;i++)
+	{
+		// clearInterval(spaceships[i].moveSpaceship);
+		// clearInterval(spaceships[i].generateBombs);
+		spaceships[i].remove();
+	}
+	for(var i=0;i<bombs.length;i++)
+	{
+		bombs[i].remove();
+		// clearInterval(bombs[i].moveBomb);
+	}
+	
+
+}
+
+function startNewLevel()
+{
+	spaceships=[];
+	bombs=[];
+	arrows=[];
+	createSpaceShips();
+}
+
+var levelCheck=setInterval(async ()=>{
+	if(score-scoreInlastLevel>3)
+	{
+		scoreInlastLevel=score;
+		clearBoard();
+		level++;
+		await delay(1000);
+		var levelBoard=document.createElement('div');
+		levelBoard.classList.add('start');
+		levelBoard.innerHTML='level '+level.toString();
+		body.appendChild(levelBoard);
+		await delay(1000);
+		levelBoard.remove();
+		startNewLevel();
+	}
+}, 5000);
 
 function  startGame()
 {
@@ -495,7 +702,18 @@ function  startGame()
 	score=0;
 	level=1;
 	removeAllSpaceship();
-	var spaceships=createSpaceShips();
+	spaceships=[];
+	// bombs=[];
+	createSpaceShips();
+	scoreInlastLevel=0;
+
+	// var arrow=document.createElement('div');
+	// arrow.classList.add('arrow');
+	// arrow.classList.add('up');
+	// body.appendChild(arrow);
+
+	waiting=false;
+
 	// console.log(spaceship);	
 	// var spaceship=document.getElementById('alien');
 	// getSpaceshipInRandomPosition(spaceship);
