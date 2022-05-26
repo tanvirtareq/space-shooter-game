@@ -85,9 +85,20 @@ class Arrow{
 
 async function fire()
 {
+		
+	upPressed = false;
+	downPressed = false;
+	leftPressed = false;
+	rightPressed = false;
+	document.removeEventListener('keydown', keydown);
+	document.removeEventListener('keyup', keyup);
 	var player=document.getElementById('player');
 	player.className='character stand up fire';
 	new Arrow(player);
+	await delay(500);
+	document.addEventListener('keydown', keydown);
+	document.addEventListener('keyup', keyup);
+
 	// arrows.push(arrow);
 	// console.log(arrow.arrow);
 }
@@ -444,7 +455,7 @@ async function exploidBomb(bomb)
 	bomb.remove();
 	if(x<=60 && y<=60)
 	{
-		// playerHit(player);
+		playerHit(player);
 	}
 	else
 	{
